@@ -18,6 +18,7 @@ package org.apache.sentry.binding.solr.conf;
 
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
@@ -71,14 +72,35 @@ public class SolrAuthzConf extends Configuration {
     currentToDeprecatedProps.put(AuthzConfVars.AUTHZ_PROVIDER.getVar(), AuthzConfVars.AUTHZ_PROVIDER_DEPRECATED);
   }
 
-  @SuppressWarnings("unused")
   private static final Logger LOG = LoggerFactory
       .getLogger(SolrAuthzConf.class);
   public static final String AUTHZ_SITE_FILE = "sentry-site.xml";
 
+  /**
+   * This constructor allows configuration of sentry-site.xml only. This is not
+   * sufficient in many cases since many of the configuration options are provided by
+   * core-site.xml. Hence use of this constructor should be avoided. Use
+   *  {@linkplain #SolrAuthzConf(List)} constructor instead.
+   *
+   * @param solrAuthzSiteURL Location of sentry-site.xml file on local file-system
+   */
+  @Deprecated
   public SolrAuthzConf(URL solrAuthzSiteURL) {
     super(true);
     addResource(solrAuthzSiteURL);
+  }
+
+  /**
+   * This constructor allows configuration of Sentry including sentry-site.xml and core-site.xml
+   *
+   * @param sentryConf Location of a folder (on local file-system) storing
+   *                   sentry Hadoop configuration files
+   */
+  public SolrAuthzConf(List<URL> sentryConf) {
+    super(true);
+    for (URL u : sentryConf) {
+      addResource(u);
+    }
   }
 
   @Override

@@ -108,7 +108,7 @@ limitations under the License.
     </dependency>
     <dependency>
       <groupId>org.apache.sentry</groupId>
-      <artifactId>sentry-core-model-search</artifactId>
+      <artifactId>sentry-core-model-solr</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.sentry</groupId>
@@ -238,6 +238,18 @@ limitations under the License.
       <groupId>org.apache.hive</groupId>
       <artifactId>hive-metastore</artifactId>
       <version>${hive.version}</version>
+      <!-- Note - I got a compilation error in my eclipse setup because somehow
+          javax.jdo.PersistenceManager interface was being loaded from this dependency.
+          In this version - PersistenceManager does not implement java.lang.AutoClosable interface
+          This breaks the usage of PersistenceManager inside try-with-resources clause in Sentry
+          TransactionManager class. This error can not be reproduced with the maven build.
+       -->
+      <exclusions>
+        <exclusion>
+          <groupId>javax.jdo</groupId>
+          <artifactId>jdo-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 

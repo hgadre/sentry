@@ -37,8 +37,8 @@ import org.apache.sentry.core.common.validator.PrivilegeValidatorContext;
 import org.apache.sentry.core.model.kafka.KafkaAuthorizable;
 import org.apache.sentry.core.model.kafka.KafkaModelAuthorizables;
 import org.apache.sentry.core.model.kafka.KafkaPrivilegeModel;
-import org.apache.sentry.core.model.search.SearchModelAuthorizables;
-import org.apache.sentry.core.model.search.SearchPrivilegeModel;
+import org.apache.sentry.core.model.solr.SolrModelAuthorizables;
+import org.apache.sentry.core.model.solr.SolrPrivilegeModel;
 import org.apache.sentry.core.model.sqoop.SqoopModelAuthorizables;
 import org.apache.sentry.core.model.sqoop.SqoopPrivilegeModel;
 import org.apache.sentry.provider.common.AuthorizationComponent;
@@ -161,7 +161,7 @@ public class GenericPrivilegeConverter implements TSentryPrivilegeConverter {
     if (AuthorizationComponent.KAFKA.equals(component)) {
       return KafkaPrivilegeModel.getInstance().getPrivilegeValidators();
     } else if ("SOLR".equals(component)) {
-      return SearchPrivilegeModel.getInstance().getPrivilegeValidators();
+      return SolrPrivilegeModel.getInstance().getPrivilegeValidators();
     } else if (AuthorizationComponent.SQOOP.equals(component)) {
       return SqoopPrivilegeModel.getInstance().getPrivilegeValidators(service);
     }
@@ -173,7 +173,7 @@ public class GenericPrivilegeConverter implements TSentryPrivilegeConverter {
     if (AuthorizationComponent.KAFKA.equals(component)) {
       return KafkaModelAuthorizables.from(keyValue);
     } else if ("SOLR".equals(component)) {
-      return SearchModelAuthorizables.from(keyValue);
+      return SolrModelAuthorizables.from(keyValue);
     } else if (AuthorizationComponent.SQOOP.equals(component)) {
       return SqoopModelAuthorizables.from(keyValue);
     }
