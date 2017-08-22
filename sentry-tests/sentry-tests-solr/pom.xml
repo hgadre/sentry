@@ -63,6 +63,11 @@ limitations under the License.
       <version>6.1.26</version>
     </dependency>
     <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <version>3.0.1</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>
       <exclusions>
@@ -75,6 +80,17 @@ limitations under the License.
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-minicluster</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>servlet-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-service</artifactId>
+      <version>${hive.version}</version>
       <exclusions>
         <exclusion>
           <groupId>javax.servlet</groupId>
@@ -96,37 +112,9 @@ limitations under the License.
   </build>
  <profiles>
     <profile>
-      <id>datanucleus3</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <properties>
-        <datanucleus-api-jdo.version>3.2.6</datanucleus-api-jdo.version>
-        <datanucleus-core.version>3.2.12</datanucleus-core.version>
-        <datanucleus-rdbms.version>3.2.12</datanucleus-rdbms.version>
-      </properties>
-      <dependencies>
-        <dependency>
-          <groupId>org.datanucleus</groupId>
-          <artifactId>datanucleus-core</artifactId>
-          <version>${datanucleus-core.version}</version>
-        </dependency>
-        <dependency>
-          <groupId>org.datanucleus</groupId>
-          <artifactId>datanucleus-api-jdo</artifactId>
-          <version>${datanucleus-api-jdo.version}</version>
-        </dependency>
-        <dependency>
-          <groupId>org.datanucleus</groupId>
-          <artifactId>datanucleus-rdbms</artifactId>
-          <version>${datanucleus-rdbms.version}</version>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
       <id>datanucleus4</id>
       <activation>
-        <activeByDefault>false</activeByDefault>
+        <activeByDefault>true</activeByDefault>
       </activation>
       <properties>
         <datanucleus-api-jdo.version>4.2.1</datanucleus-api-jdo.version>
