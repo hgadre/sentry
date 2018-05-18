@@ -90,6 +90,8 @@ public class SolrSentryServiceTestBase extends AbstractSolrSentryTestCase {
         .addConfig("cloud-managed", TEST_PATH().resolve("configsets").resolve("cloud-managed").resolve("conf"))
         .addConfig("cloud-minimal_doc_level_security", TEST_PATH().resolve("configsets")
                       .resolve("cloud-minimal_doc_level_security").resolve("conf"))
+        .addConfig("doc_level_security_conjunctive_query", TEST_PATH().resolve("configsets")
+            .resolve("doc_level_security_conjunctive_query").resolve("conf"))
         .configure();
       log.info("Successfully started Solr service");
 

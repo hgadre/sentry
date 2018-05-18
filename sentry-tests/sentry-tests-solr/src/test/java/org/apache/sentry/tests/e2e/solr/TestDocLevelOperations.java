@@ -20,8 +20,12 @@ import static org.apache.sentry.tests.e2e.solr.TestSentryServer.ADMIN_USER;
 
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -45,6 +49,7 @@ import org.junit.Test;
  */
 public class TestDocLevelOperations extends SolrSentryServiceTestBase {
   private static final String AUTH_FIELD = "sentry_auth";
+  private static final String AUTH_COUNT_FIELD = "sentry_auth_count";
   private static final int NUM_DOCS = 100;
   private static final int EXTRA_AUTH_FIELDS = 2;
 
@@ -52,10 +57,16 @@ public class TestDocLevelOperations extends SolrSentryServiceTestBase {
   public static void setupPermissions() throws SentryUserException {
     sentryClient.createRole(ADMIN_USER, "junit_role", COMPONENT_SOLR);
     sentryClient.createRole(ADMIN_USER, "doclevel_role", COMPONENT_SOLR);
+    sentryClient.createRole(ADMIN_USER, "doclevel_role2", COMPONENT_SOLR);
+
     sentryClient.grantRoleToGroups(ADMIN_USER, "junit_role", COMPONENT_SOLR,
         Collections.singleton("junit"));
     sentryClient.grantRoleToGroups(ADMIN_USER, "doclevel_role", COMPONENT_SOLR,
         Collections.singleton("doclevel"));
+    sentryClient.grantRoleToGroups(ADMIN_USER, "doclevel_role2", COMPONENT_SOLR,
+        Collections.singleton("group0"));
+    sentryClient.grantRoleToGroups(ADMIN_USER, "doclevel_role2", COMPONENT_SOLR,
+        Collections.singleton("group2"));
 
     // junit user
     grantAdminPrivileges(ADMIN_USER, "junit_role", SolrConstants.ALL, SolrConstants.ALL);
@@ -66,6 +77,11 @@ public class TestDocLevelOperations extends SolrSentryServiceTestBase {
     // docLevel user
     grantCollectionPrivileges(ADMIN_USER, "doclevel_role", "docLevelCollection", SolrConstants.ALL);
     grantCollectionPrivileges(ADMIN_USER, "doclevel_role", "testUpdateDeleteOperations", SolrConstants.ALL);
+
+    // user0, user1 and user2
+    grantCollectionPrivileges(ADMIN_USER, "role0", "conjunctiveQueryCollection", SolrConstants.ALL);
+    grantCollectionPrivileges(ADMIN_USER, "role1", "conjunctiveQueryCollection", SolrConstants.ALL);
+    grantCollectionPrivileges(ADMIN_USER, "role2", "conjunctiveQueryCollection", SolrConstants.ALL);
 
     // admin user
     grantCollectionPrivileges(ADMIN_USER, ADMIN_ROLE, SolrConstants.ALL, SolrConstants.ALL);
@@ -237,6 +253,82 @@ public class TestDocLevelOperations extends SolrSentryServiceTestBase {
         totalAllRolesAdded, totalOnlyAllRolesAdded, allRolesFactor, totalJunitAdded, junitFactor);
     checkAllRolesToken(collectionName, getRealTimeGetRequest(), cluster.getSolrClient(),
          totalAllRolesAdded, totalOnlyAllRolesAdded, allRolesFactor, totalJunitAdded, junitFactor);
+  }
+
+  /**
+   * Test that queries from different users only return the documents they have access to.
+   */
+  @Test
+  public void testDocLevelOperationsForConjuctiveQuery() throws Exception {
+    String collectionName = "conjunctiveQueryCollection";
+    createCollection(ADMIN_USER, collectionName, "doc_level_security_conjunctive_query", NUM_SERVERS, 1);
+
+    CloudSolrClient client = cluster.getSolrClient();
+
+    Map<String, Collection<String>> docToRolesMapping = new HashMap<>();
+    docToRolesMapping.put ("0", Arrays.asList("role0", "doclevel_role2"));
+    docToRolesMapping.put ("1", Arrays.asList("role1"));
+    docToRolesMapping.put ("2", Arrays.asList("doclevel_role2"));
+
+    // Index docs
+    ArrayList<SolrInputDocument> docs = new ArrayList<SolrInputDocument>();
+    for (int i = 0; i < docToRolesMapping.size(); i++) {
+      SolrInputDocument doc = new SolrInputDocument();
+      String iStr = Long.toString(i);
+      doc.addField("id", iStr);
+      doc.addField("description", "description" + iStr);
+      doc.addField(AUTH_FIELD, docToRolesMapping.get(iStr));
+      doc.addField(AUTH_COUNT_FIELD, docToRolesMapping.get(iStr).size());
+
+      docs.add(doc);
+    }
+
+    client.add(collectionName, docs);
+    client.commit(collectionName, true, true);
+
+    QueryRequest request = new QueryRequest(new SolrQuery("*:*"));
+
+    // validate num_docs for user0
+    {
+      setAuthenticationUser("user0");
+      try {
+        Collection<String> expectedResults = Arrays.asList("0", "2");
+        QueryResponse  rsp = request.process(client, collectionName);
+        assertEquals(2, rsp.getResults().getNumFound());
+        for (int i = 0; i < rsp.getResults().getNumFound(); i++) {
+          assertTrue("Expected doc_ids : " + expectedResults +
+              " actual result : " + rsp.getResults().toString(),
+              expectedResults.contains(rsp.getResults().get(i).getFieldValue("id")));
+        }
+      } finally {
+        setAuthenticationUser(ADMIN_USER);
+      }
+    }
+
+    // validate num_docs for user1
+    {
+      setAuthenticationUser("user1");
+      try {
+        QueryResponse  rsp = request.process(client, collectionName);
+        assertEquals(1, rsp.getResults().getNumFound());
+        assertEquals("1", rsp.getResults().get(0).getFieldValue("id"));
+      } finally {
+        setAuthenticationUser(ADMIN_USER);
+      }
+    }
+
+    // validate num_docs for user2
+    {
+      setAuthenticationUser("user2");
+      try {
+        QueryResponse  rsp = request.process(client, collectionName);
+        assertEquals(1, rsp.getResults().getNumFound());
+        assertEquals("2", rsp.getResults().get(0).getFieldValue("id"));
+
+      } finally {
+        setAuthenticationUser(ADMIN_USER);
+      }
+    }
   }
 
   private void checkAllRolesToken(String collectionName, QueryRequest request, CloudSolrClient client,
